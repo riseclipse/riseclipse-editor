@@ -25,7 +25,7 @@ import fr.centralesupelec.edf.riseclipse.ui.RiseClipseEditor;
 import fr.centralesupelec.edf.riseclipse.util.AbstractRiseClipseConsole;
 import fr.centralesupelec.edf.riseclipse.util.IRiseClipseResource;
 
-public class displayStatisticsHandler extends AbstractHandler {
+public class DisplayStatisticsHandler extends AbstractHandler {
 
     @Override
     public Object execute( ExecutionEvent event ) throws ExecutionException {
