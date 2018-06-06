@@ -13,4 +13,27 @@
     <version>1.0.1-SNAPSHOT</version>
   </parent>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <!-- This needed parameter seems to be ignored if put in the pom root file -->
+          <pomDependencies>consider</pomDependencies>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  
+  <!-- RiseClipse plugins needed -->
+  <dependencies>
+    <dependency>
+      <groupId>fr.centralesupelec.edf.riseclipse</groupId>
+      <artifactId>fr.centralesupelec.edf.riseclipse.main</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+  </dependencies>
+
 </project>
