@@ -4,13 +4,13 @@
  
   <groupId>fr.centralesupelec.edf.riseclipse</groupId>
   <artifactId>fr.centralesupelec.edf.riseclipse.editor</artifactId>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.1</version>
   <packaging>eclipse-plugin</packaging>
 
   <parent>
     <groupId>fr.centralesupelec.edf.riseclipse</groupId>
     <artifactId>RiseClipseEditor</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
   </parent>
 
   <build>
