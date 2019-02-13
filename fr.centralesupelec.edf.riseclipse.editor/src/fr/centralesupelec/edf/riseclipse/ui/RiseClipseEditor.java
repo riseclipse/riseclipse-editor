@@ -652,6 +652,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         super();
         
         this.console = new EclipseRiseClipseConsole();
+        console.setLevel( IRiseClipseConsole.INFO_LEVEL );
         initializeEditingDomain();
     }
 
