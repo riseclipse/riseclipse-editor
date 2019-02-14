@@ -675,7 +675,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         super();
         
         this.console = new EclipseRiseClipseConsole();
-        console.setLevel( IRiseClipseConsole.VERBOSE_LEVEL );
+        console.setLevel( IRiseClipseConsole.INFO_LEVEL );
         
         loadKnownMetamodels();
         
@@ -1149,7 +1149,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 RiseClipseResourceSetFactory f = factoryFinder.findFactoryFor( uriConverter, resourceURI );
                 ResourceSet resourceSet = null;
                 if( f != null ) {
-                    resourceSet = f.createResourceSet();
+                    resourceSet = f.createResourceSet( console );
                 }
                 initializeEditingDomain( resourceSet );
             }
@@ -1193,9 +1193,9 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         // Let each resource do what it needs after all is loaded
         // This is at least needed for CIM with zip files containing several
         // resources and links to be set between objects in different resources
-        
         if( editingDomain.getResourceSet() instanceof RiseClipseResourceSet ) {
             (( RiseClipseResourceSet ) editingDomain.getResourceSet() ).finalizeLoad( console );
+            (( RiseClipseResourceSet ) editingDomain.getResourceSet() ).setCallFinalizeLoadAfterGetResource();
         }
     }
 
