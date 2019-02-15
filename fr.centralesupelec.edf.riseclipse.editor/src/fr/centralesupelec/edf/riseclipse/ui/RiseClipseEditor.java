@@ -1149,7 +1149,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 RiseClipseResourceSetFactory f = factoryFinder.findFactoryFor( uriConverter, resourceURI );
                 ResourceSet resourceSet = null;
                 if( f != null ) {
-                    resourceSet = f.createResourceSet( console );
+                    resourceSet = f.createResourceSet( false, console );
                 }
                 initializeEditingDomain( resourceSet );
             }
