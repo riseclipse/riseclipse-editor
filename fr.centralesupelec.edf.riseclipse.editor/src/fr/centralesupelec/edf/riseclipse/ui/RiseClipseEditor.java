@@ -32,6 +32,10 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
@@ -98,6 +102,9 @@ import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheet;
 import org.eclipse.ui.views.properties.PropertySheetPage;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.command.CommandStack;
@@ -116,6 +123,8 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.Resource.Factory;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.URIConverter;
+import org.eclipse.emf.ecore.resource.impl.ExtensibleURIConverterImpl;
 import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.IllegalValueException;
@@ -140,7 +149,9 @@ import org.eclipse.emf.edit.ui.view.ExtendedPropertySheetPage;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
 
 import fr.centralesupelec.edf.riseclipse.util.IRiseClipseConsole;
-import fr.centralesupelec.edf.riseclipse.util.IRiseClipseResource;
+import fr.centralesupelec.edf.riseclipse.util.RiseClipseResourceSet;
+import fr.centralesupelec.edf.riseclipse.util.RiseClipseResourceSetFactory;
+import fr.centralesupelec.edf.riseclipse.util.RiseClipseRuntimeException;
 
 /**
  * The base is the EMF generated editor
@@ -311,21 +322,23 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
     protected boolean updateProblemIndication = true;
     
     
-    /*
-     * RiseClipseSpecific begin
-     */
+    //===========================
+    // RiseClipseSpecific begin
+
     private static class RiseClipseMetaModel {
         private String name;
         private AdapterFactory adapterFactory;
         private Resource.Factory resourceFactory;
+        private RiseClipseResourceSetFactory resourceSetFactory;
         private ViewerFilter viewerFilter;
         
         public RiseClipseMetaModel( String name, AdapterFactory adapterFactory,
-                Factory resourceFactory, ViewerFilter filter ) {
+                Factory resourceFactory, RiseClipseResourceSetFactory resourceSetFactory, ViewerFilter filter ) {
             super();
             this.name = name;
             this.adapterFactory = adapterFactory;
             this.resourceFactory = resourceFactory;
+            this.resourceSetFactory = resourceSetFactory;
             this.viewerFilter = filter;
         }
 
@@ -340,6 +353,10 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
 
         public Resource.Factory getResourceFactory() {
             return resourceFactory;
+        }
+
+        public RiseClipseResourceSetFactory getResourceSetFactory() {
+            return resourceSetFactory;
         }
 
         public ViewerFilter getViewerFilter() {
@@ -385,9 +402,8 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 true );
     }
 
-    /*
-     * RiseClipseSpecific end
-     */
+    // RiseClipseSpecific end
+    //=========================
 
     /**
      * Adapter used to update the problem indication when resources are demanded
@@ -518,8 +534,6 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         }
     };
 
-    private IRiseClipseConsole console;
-
     /**
      * Handles activation of the editor or it's associated views.
      */
@@ -645,6 +659,15 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 getString( "_WARN_FileConflict" ) );
     }
 
+    //==========================
+    // RiseClipseSpecific begin
+
+     private IRiseClipseConsole console;
+
+    private HashMap< String, Resource.Factory > resourceFactories;
+    private HashMap< String, RiseClipseResourceSetFactory > resourceSetFactories;
+    private HashMap< String, AdapterFactory > adapterFactories;
+
     /**
      * This creates a model editor.
      */
@@ -652,39 +675,19 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         super();
         
         this.console = new EclipseRiseClipseConsole();
-        initializeEditingDomain();
+        console.setLevel( IRiseClipseConsole.INFO_LEVEL );
+        
+        loadKnownMetamodels();
+        
+        // Will be done later, in createModel
+        //initializeEditingDomain();
     }
-
-    /**
-     * This sets up the editing domain for the model editor.
-     */
-    protected void initializeEditingDomain() {
-        // Create an adapter factory that yields item providers.
-        //
-        adapterFactory = new ComposedAdapterFactory( ComposedAdapterFactory.Descriptor.Registry.INSTANCE );
-
-        // TODO: do we need it ?
-        adapterFactory.addAdapterFactory( new ResourceItemProviderAdapterFactory() );
-
-        /*
-         * RiseClipseSpecific begin
-         */
-        /*
-         * We don't need/want that our editor read any model : that's why
-         * we use a specific extension point.
-         * What we need:
-         * - the uri of known models: it will be the key
-         * - a human readable name
-         * - the adapter factory for the editor: we could get it with the
-         *   itemProviderAdapterFactories extension point
-         * - the resource factory: it is available in the extension_parser
-         *   extension point, but with no link to the uri except that the same
-         *   plugin.xml file should contain the generated_package extension point
-         *   which has the uri
-         * 
-         * TODO: how to allow for several kind of serialization for the same uri ?
-         */
-        HashMap< String, Resource.Factory > resourceFactories = new HashMap< String, Resource.Factory >();
+    
+    protected void loadKnownMetamodels() {
+        resourceFactories = new HashMap<>();
+        resourceSetFactories = new HashMap<>();
+        adapterFactories = new HashMap<>();
+        
         IConfigurationElement[] contributions = Platform.getExtensionRegistry().getConfigurationElementsFor(
                 "fr.centralesupelec.edf.riseclipse.main.meta_models" );
         for( int i = 0; i < contributions.length; i++ ) {
@@ -692,6 +695,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
             String name = contributions[i].getAttribute( "name" );
             String adapterFactoryName = contributions[i].getAttribute( "adapterFactory" );
             String resourceFactoryName = contributions[i].getAttribute( "resourceFactory" );
+            String resourceSetFactoryName = contributions[i].getAttribute( "resourceSetFactory" );
             String viewerFilterName = contributions[i].getAttribute( "viewerFilter" );
             //if(( uri == null ) || ( name == null ) || ( adapterFactoryName == null ) || ( resourceFactoryName == null )) {
             if(( uri == null ) || ( name == null )) {
@@ -699,23 +703,28 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 continue;
             }
             AdapterFactory newAdapterFactory = null;
-            Resource.Factory resourceFactory = null;
-            ViewerFilter viewerFilter = null;
+            Resource.Factory newResourceFactory = null;
+            RiseClipseResourceSetFactory newResourceSetFactory = null;
+            ViewerFilter newViewerFilter = null;
             if( knownMetamodels.get( uri ) != null ) {
-                // We allow for extension point in several plugin (one in the main, another in the edit)
+                // We allow for extension point in several plugins (one in the main, another in the edit)
                 newAdapterFactory = knownMetamodels.get( uri ).getAdapterFactory();
-                resourceFactory = knownMetamodels.get( uri ).getResourceFactory();
-                viewerFilter = knownMetamodels.get( uri ).getViewerFilter();
+                newResourceFactory = knownMetamodels.get( uri ).getResourceFactory();
+                newResourceSetFactory = knownMetamodels.get( uri ).getResourceSetFactory();
+                newViewerFilter = knownMetamodels.get( uri ).getViewerFilter();
             }
             try {
                 if(( adapterFactoryName != null ) && ! adapterFactoryName.isEmpty() ) {
                     newAdapterFactory = ( AdapterFactory ) contributions[i].createExecutableExtension( "adapterFactory" );
                 }
                 if(( resourceFactoryName != null ) && ! resourceFactoryName.isEmpty() ) {
-                    resourceFactory = ( Resource.Factory ) contributions[i].createExecutableExtension( "resourceFactory" );
+                    newResourceFactory = ( Resource.Factory ) contributions[i].createExecutableExtension( "resourceFactory" );
+                }
+                if(( resourceSetFactoryName != null ) && ! resourceSetFactoryName.isEmpty() ) {
+                    newResourceSetFactory = ( RiseClipseResourceSetFactory ) contributions[i].createExecutableExtension( "resourceSetFactory" );
                 }
                 if(( viewerFilterName != null ) && ! viewerFilterName.isEmpty() ) {
-                    viewerFilter = ( ViewerFilter ) contributions[i].createExecutableExtension( "viewerFilter" );
+                    newViewerFilter = ( ViewerFilter ) contributions[i].createExecutableExtension( "viewerFilter" );
                 }
             }
             catch( CoreException e ) {
@@ -726,25 +735,52 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 console.info( "Added metamodel " + name + " for URI " + uri );
             }
             knownMetamodels.put( uri, new RiseClipseMetaModel( name, newAdapterFactory,
-                    resourceFactory, viewerFilter ));
+                    newResourceFactory, newResourceSetFactory, newViewerFilter ));
 
-            if( resourceFactory != null ) {
-                resourceFactories.put( uri, resourceFactory );
+            if( newResourceFactory != null ) {
+                resourceFactories.put( uri, newResourceFactory );
                 // trailing sharp which is present in some XML namespace (CIM !)
                 // is removed in URIs for RiseClipse
                 if( ! uri.endsWith( "#" )) {
-                    resourceFactories.put( uri + '#', resourceFactory );
+                    resourceFactories.put( uri + '#', newResourceFactory );
                 }
             }
+            
+            if( newResourceSetFactory != null ) {
+                resourceSetFactories.put( uri, newResourceSetFactory );
+                // trailing sharp which is present in some XML namespace (CIM !)
+                // is removed in URIs for RiseClipse
+                if( ! uri.endsWith( "#" )) {
+                    resourceSetFactories.put( uri + '#', newResourceSetFactory );
+                }
+            }
+            
             if( newAdapterFactory != null ) {
-                adapterFactory.addAdapterFactory( newAdapterFactory );
+                adapterFactories.put( uri, newAdapterFactory );
+                if( ! uri.endsWith( "#" )) {
+                    adapterFactories.put( uri + '#', newAdapterFactory );
+                }
+                // TODO: do it when we know which metalodel is used !
+                //adapterFactory.addAdapterFactory( newAdapterFactory );
             }
         }
-        
-        /*
-         * RiseClipseSpecific end
-         */
+    }
 
+    // RiseClipseSpecific end
+    //=========================
+
+    /**
+     * This sets up the editing domain for the model editor.
+     */
+    protected void initializeEditingDomain( ResourceSet resourceSet ) {
+        // Create an adapter factory that yields item providers.
+        //
+        adapterFactory = new ComposedAdapterFactory( ComposedAdapterFactory.Descriptor.Registry.INSTANCE );
+
+        // TODO: do we need it ?
+        adapterFactory.addAdapterFactory( new ResourceItemProviderAdapterFactory() );
+
+        
         // TODO: do we need it ?
         adapterFactory.addAdapterFactory( new ReflectiveItemProviderAdapterFactory() );
 
@@ -784,14 +820,21 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
 
         // Create the editing domain with a special command stack.
         //
-        /*
-         * RiseClipseSpecific begin
-         */
-        editingDomain = new RiseClipseAdapterFactoryEditingDomain( adapterFactory, commandStack,
-                new HashMap< Resource, Boolean >(), resourceFactories );
-        /*
-         * RiseClipseSpecific end
-         */
+        //=========================
+        // RiseClipseSpecific begin
+        
+        if( resourceSet != null ) {
+            editingDomain = new AdapterFactoryEditingDomain( adapterFactory, commandStack,
+                    resourceSet );
+            editingDomain.setResourceToReadOnlyMap( new HashMap< Resource, Boolean >() );
+        }
+        else {
+            editingDomain = new AdapterFactoryEditingDomain( adapterFactory, commandStack,
+                    new HashMap< Resource, Boolean >() );
+        }
+
+        // RiseClipseSpecific end
+        //========================
     }
 
     /**
@@ -966,16 +1009,122 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         viewer.addDropSupport( dndOperations, transfers, new EditingDomainViewerDropAdapter( editingDomain, viewer ) );
     }
 
+    @SuppressWarnings( "serial" )
+    private static class FactoryFoundException extends SAXException {
+
+        private RiseClipseResourceSetFactory factory;
+
+        public FactoryFoundException( RiseClipseResourceSetFactory factory ) {
+            this.factory = factory;
+        }
+
+        public RiseClipseResourceSetFactory getFactory() {
+            return factory;
+        }
+    }
+
+    protected class ResourceSetFactoryFinder {
+
+        private static final String XMLNS_ATTRIBUTE_NAME = "xmlns";
+        
+        private SAXParser saxParser;
+
+        public ResourceSetFactoryFinder() {
+            SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
+            try {
+                saxParser = saxParserFactory.newSAXParser();
+            }
+            catch( ParserConfigurationException e ) {
+                throw new RiseClipseRuntimeException( "RiseClipseEditor.ResourceSetFactoryFinder", e );
+            }
+            catch( SAXException e ) {
+                throw new RiseClipseRuntimeException( "RiseClipseEditor.ResourceSetFactoryFinder", e );
+            }
+        }
+
+        public RiseClipseResourceSetFactory findFactoryFor( URIConverter uriConverter, URI uri ) {
+
+            DefaultHandler defaultHandler = new DefaultHandler() {
+                public void startElement( String uri, String localName, String qName, Attributes attributes )
+                        throws SAXException {
+                    for( int i = 0; i < attributes.getLength(); ++i ) {
+                        String furi = attributes.getURI( i );
+                        if( furi.length() == 0 ) {
+                            furi = attributes.getQName( i );
+                            int dc = furi.indexOf( ':' );
+                            if( dc != -1 ) {
+                                furi = furi.substring( 0, dc );
+                            }
+                        }
+                        if( XMLNS_ATTRIBUTE_NAME.equals( furi ) ) {
+                            String ns = attributes.getValue( i );
+                            if( RiseClipseEditor.this.resourceSetFactories.containsKey( ns )) {
+                                RiseClipseResourceSetFactory factory = RiseClipseEditor.this.resourceSetFactories.get( ns );
+                                // Stop parsing and give back result
+                                // TODO: can we stop parsing without using an exception ?
+                                throw new FactoryFoundException( factory );
+                            }
+                        }
+                    }
+                    // no need to look after the root element
+                    throw new FactoryFoundException( null );
+                }
+            };
+
+            try {
+                InputStream inputStream = uriConverter.createInputStream( uri );
+                saxParser.parse( inputStream, defaultHandler );
+            }
+            catch( FactoryFoundException e ) {
+                return e.getFactory();
+            }
+            catch( SAXException e ) {
+                // Not an xml file or any other error : we will use the standard mechanism
+                return null;
+            }
+            catch( IOException e ) {
+                // Not an xml file or any other error : we will use the standard mechanism
+                return null;
+            }
+
+            return null;
+        }
+    }
+    
+    private ResourceSetFactoryFinder factoryFinder = new ResourceSetFactoryFinder();
+    
     /**
      * This is the method called to load a resource into the editing domain's
      * resource set based on the editor's input.
      */
     public void createModel() {
+
+        // In the standard generated EMF editor, the EditingDomain (org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain)
+        // is created with the editor, the ResourceSet is created by the EditingDomain.
+        //
+        // We want to use a metamodel specific ResourceSet. To get the right one, we need to get the root element of the XML file.
+        // the namespace (URI) of the root element may not be the right one (for example, the root of an CIMXML file belongs to
+        // the rdf namespace, not to the CIM one), so we look at xmlns attributes and stop as soon as we got one which is known
+        // through RiseClipse metamodel extension point.
+        // 
+        // But to get the root element, we need to create an InputStream which is done by an URIConverter which is usually obtained
+        // through the ResourceSet !
+        // We also need to create an InputStream to check for a zip archive.
+        //
+        // Available options:
+        //   1 - create first a standard ResourceSet, then the right one
+        //   2 - create an URIConverter
+        //   3 - ??
+        // 
+        // We try with option 2.
+        
+        URIConverter uriConverter = new ExtensibleURIConverterImpl();
+
         ArrayList< URI > resourceURIs = new ArrayList< URI >();
         resourceURIs.add( EditUIUtil.getURI( getEditorInput() ));
         
         try {
-            ZipInputStream in = new ZipInputStream( editingDomain.getResourceSet().getURIConverter().createInputStream( resourceURIs.get( 0 )));
+            ZipInputStream in = new ZipInputStream( uriConverter.createInputStream( resourceURIs.get( 0 )));
             ZipEntry entry = in.getNextEntry();
             if( entry != null ) {
                 String zipURI = resourceURIs.get( 0 ).toString();
@@ -993,6 +1142,19 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         }
         
         for( URI resourceURI : resourceURIs ) {
+            // First time
+            if( editingDomain == null ) {
+                
+                // Find the right ResourceSet, create the EditingDomain with it
+                RiseClipseResourceSetFactory f = factoryFinder.findFactoryFor( uriConverter, resourceURI );
+                ResourceSet resourceSet = null;
+                if( f != null ) {
+                    resourceSet = f.createResourceSet( false, console );
+                }
+                initializeEditingDomain( resourceSet );
+            }
+            
+            
             try {
                 // Load the resource through the editing domain.
                 //
@@ -1031,11 +1193,9 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         // Let each resource do what it needs after all is loaded
         // This is at least needed for CIM with zip files containing several
         // resources and links to be set between objects in different resources
-        
-        for( Resource resource : editingDomain.getResourceSet().getResources() ) {
-            if( resource instanceof IRiseClipseResource ) {
-                (( IRiseClipseResource ) resource ).finalizeLoad( false );
-            }
+        if( editingDomain.getResourceSet() instanceof RiseClipseResourceSet ) {
+            (( RiseClipseResourceSet ) editingDomain.getResourceSet() ).finalizeLoad( console );
+            (( RiseClipseResourceSet ) editingDomain.getResourceSet() ).setCallFinalizeLoadAfterGetResource();
         }
     }
 
