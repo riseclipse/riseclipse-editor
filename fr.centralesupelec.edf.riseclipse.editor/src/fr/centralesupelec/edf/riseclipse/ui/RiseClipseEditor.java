@@ -149,8 +149,8 @@ import org.eclipse.emf.edit.ui.view.ExtendedPropertySheetPage;
 import org.eclipse.ui.actions.WorkspaceModifyOperation;
 
 import fr.centralesupelec.edf.riseclipse.util.IRiseClipseConsole;
-import fr.centralesupelec.edf.riseclipse.util.RiseClipseResourceSet;
-import fr.centralesupelec.edf.riseclipse.util.RiseClipseResourceSetFactory;
+import fr.centralesupelec.edf.riseclipse.util.AbstractRiseClipseResourceSet;
+import fr.centralesupelec.edf.riseclipse.util.IRiseClipseResourceSetFactory;
 import fr.centralesupelec.edf.riseclipse.util.RiseClipseRuntimeException;
 
 /**
@@ -329,11 +329,11 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         private String name;
         private AdapterFactory adapterFactory;
         private Resource.Factory resourceFactory;
-        private RiseClipseResourceSetFactory resourceSetFactory;
+        private IRiseClipseResourceSetFactory resourceSetFactory;
         private ViewerFilter viewerFilter;
         
         public RiseClipseMetaModel( String name, AdapterFactory adapterFactory,
-                Factory resourceFactory, RiseClipseResourceSetFactory resourceSetFactory, ViewerFilter filter ) {
+                Factory resourceFactory, IRiseClipseResourceSetFactory resourceSetFactory, ViewerFilter filter ) {
             super();
             this.name = name;
             this.adapterFactory = adapterFactory;
@@ -355,7 +355,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
             return resourceFactory;
         }
 
-        public RiseClipseResourceSetFactory getResourceSetFactory() {
+        public IRiseClipseResourceSetFactory getResourceSetFactory() {
             return resourceSetFactory;
         }
 
@@ -662,10 +662,10 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
     //==========================
     // RiseClipseSpecific begin
 
-     private IRiseClipseConsole console;
+    private IRiseClipseConsole console;
 
     private HashMap< String, Resource.Factory > resourceFactories;
-    private HashMap< String, RiseClipseResourceSetFactory > resourceSetFactories;
+    private HashMap< String, IRiseClipseResourceSetFactory > resourceSetFactories;
     private HashMap< String, AdapterFactory > adapterFactories;
 
     /**
@@ -704,7 +704,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
             }
             AdapterFactory newAdapterFactory = null;
             Resource.Factory newResourceFactory = null;
-            RiseClipseResourceSetFactory newResourceSetFactory = null;
+            IRiseClipseResourceSetFactory newResourceSetFactory = null;
             ViewerFilter newViewerFilter = null;
             if( knownMetamodels.get( uri ) != null ) {
                 // We allow for extension point in several plugins (one in the main, another in the edit)
@@ -721,7 +721,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                     newResourceFactory = ( Resource.Factory ) contributions[i].createExecutableExtension( "resourceFactory" );
                 }
                 if(( resourceSetFactoryName != null ) && ! resourceSetFactoryName.isEmpty() ) {
-                    newResourceSetFactory = ( RiseClipseResourceSetFactory ) contributions[i].createExecutableExtension( "resourceSetFactory" );
+                    newResourceSetFactory = ( IRiseClipseResourceSetFactory ) contributions[i].createExecutableExtension( "resourceSetFactory" );
                 }
                 if(( viewerFilterName != null ) && ! viewerFilterName.isEmpty() ) {
                     newViewerFilter = ( ViewerFilter ) contributions[i].createExecutableExtension( "viewerFilter" );
@@ -1012,13 +1012,13 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
     @SuppressWarnings( "serial" )
     private static class FactoryFoundException extends SAXException {
 
-        private RiseClipseResourceSetFactory factory;
+        private IRiseClipseResourceSetFactory factory;
 
-        public FactoryFoundException( RiseClipseResourceSetFactory factory ) {
+        public FactoryFoundException( IRiseClipseResourceSetFactory factory ) {
             this.factory = factory;
         }
 
-        public RiseClipseResourceSetFactory getFactory() {
+        public IRiseClipseResourceSetFactory getFactory() {
             return factory;
         }
     }
@@ -1042,7 +1042,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
             }
         }
 
-        public RiseClipseResourceSetFactory findFactoryFor( URIConverter uriConverter, URI uri ) {
+        public IRiseClipseResourceSetFactory findFactoryFor( URIConverter uriConverter, URI uri ) {
 
             DefaultHandler defaultHandler = new DefaultHandler() {
                 public void startElement( String uri, String localName, String qName, Attributes attributes )
@@ -1059,7 +1059,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                         if( XMLNS_ATTRIBUTE_NAME.equals( furi ) ) {
                             String ns = attributes.getValue( i );
                             if( RiseClipseEditor.this.resourceSetFactories.containsKey( ns )) {
-                                RiseClipseResourceSetFactory factory = RiseClipseEditor.this.resourceSetFactories.get( ns );
+                                IRiseClipseResourceSetFactory factory = RiseClipseEditor.this.resourceSetFactories.get( ns );
                                 // Stop parsing and give back result
                                 // TODO: can we stop parsing without using an exception ?
                                 throw new FactoryFoundException( factory );
@@ -1146,7 +1146,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
             if( editingDomain == null ) {
                 
                 // Find the right ResourceSet, create the EditingDomain with it
-                RiseClipseResourceSetFactory f = factoryFinder.findFactoryFor( uriConverter, resourceURI );
+                IRiseClipseResourceSetFactory f = factoryFinder.findFactoryFor( uriConverter, resourceURI );
                 ResourceSet resourceSet = null;
                 if( f != null ) {
                     resourceSet = f.createResourceSet( false, console );
@@ -1161,7 +1161,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 @SuppressWarnings("unused")
 				Resource resource = editingDomain.getResourceSet().getResource( resourceURI, true );
             }
-            // This is done by RiseClipseModelLoader in the command line tool 
+            // This is done by AbstractRiseClipseModelLoader in the command line tool 
             catch( RuntimeException re ) {
                 Throwable cause = re.getCause();
                 if( cause instanceof IllegalValueException ) {
@@ -1193,9 +1193,9 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         // Let each resource do what it needs after all is loaded
         // This is at least needed for CIM with zip files containing several
         // resources and links to be set between objects in different resources
-        if( editingDomain.getResourceSet() instanceof RiseClipseResourceSet ) {
-            (( RiseClipseResourceSet ) editingDomain.getResourceSet() ).finalizeLoad( console );
-            (( RiseClipseResourceSet ) editingDomain.getResourceSet() ).setCallFinalizeLoadAfterGetResource();
+        if( editingDomain.getResourceSet() instanceof AbstractRiseClipseResourceSet ) {
+            (( AbstractRiseClipseResourceSet ) editingDomain.getResourceSet() ).finalizeLoad( console );
+            (( AbstractRiseClipseResourceSet ) editingDomain.getResourceSet() ).setCallFinalizeLoadAfterGetResource();
         }
     }
 
