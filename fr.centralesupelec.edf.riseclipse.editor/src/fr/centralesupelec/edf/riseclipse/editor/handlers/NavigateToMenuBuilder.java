@@ -21,6 +21,7 @@ package fr.centralesupelec.edf.riseclipse.editor.handlers;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.eclipse.emf.common.notify.AdapterFactory;
 import org.eclipse.emf.common.util.EList;
@@ -40,6 +41,7 @@ import org.eclipse.ui.menus.IWorkbenchContribution;
 import org.eclipse.ui.services.IServiceLocator;
 
 import fr.centralesupelec.edf.riseclipse.ui.RiseClipseEditor;
+import fr.centralesupelec.edf.riseclipse.util.RiseClipseMetamodel;
 
 public class NavigateToMenuBuilder extends CompoundContributionItem implements IWorkbenchContribution {
 
@@ -67,7 +69,7 @@ public class NavigateToMenuBuilder extends CompoundContributionItem implements I
         items[0] = navigateTo;
 
         EObject o = ( EObject ) tree.getFirstElement();
-        AdapterFactory adapter = editor.getAdapterFactory( o.eClass().getEPackage().getNsURI() );
+        Optional< AdapterFactory > adapter = RiseClipseMetamodel.getMetamodel( o.eClass().getEPackage().getNsURI() ).flatMap( a -> a.getAdapterFactory() );
         EList< EReference > refs = o.eClass().getEAllReferences();
         ArrayList< EReference > usedRefs = new ArrayList< EReference >();
         ArrayList< Object > values = new ArrayList< Object >();
@@ -100,8 +102,10 @@ public class NavigateToMenuBuilder extends CompoundContributionItem implements I
                 else {
                     val = values.get( i );
                 }
-                IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.adapt( val, IItemLabelProvider.class );
-                contributionParameters.label = labelProvider.getText( val );
+                if( adapter.isPresent() ) {
+                    IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.get().adapt( val, IItemLabelProvider.class );
+                    contributionParameters.label = labelProvider.getText( val );
+                }
                 CommandContributionItem c = new CommandContributionItem( contributionParameters );
                 map.put( c, val );
                 ref.add( c );
