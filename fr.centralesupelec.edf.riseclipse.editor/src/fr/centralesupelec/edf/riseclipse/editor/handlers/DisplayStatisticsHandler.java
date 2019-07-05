@@ -30,6 +30,8 @@ public class DisplayStatisticsHandler extends AbstractHandler {
     @Override
     public Object execute( ExecutionEvent event ) throws ExecutionException {
         RiseClipseEditor e = ( RiseClipseEditor ) HandlerUtil.getActiveEditor( event );
+        if( e == null ) return null;
+        if( e.getEditingDomain() == null ) return null;
         ResourceSet r = e.getEditingDomain().getResourceSet();
         for( int i = 0; i < r.getResources().size(); ++i ) {
             Resource c = r.getResources().get( i );

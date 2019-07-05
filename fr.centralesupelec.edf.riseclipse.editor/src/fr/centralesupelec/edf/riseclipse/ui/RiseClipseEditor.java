@@ -33,10 +33,6 @@ import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
@@ -46,11 +42,9 @@ import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
@@ -103,9 +97,6 @@ import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheet;
 import org.eclipse.ui.views.properties.PropertySheetPage;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.command.CommandStack;
@@ -122,7 +113,6 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.Resource.Factory;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.URIConverter;
 import org.eclipse.emf.ecore.resource.impl.ExtensibleURIConverterImpl;
@@ -152,9 +142,7 @@ import org.eclipse.ui.actions.WorkspaceModifyOperation;
 import fr.centralesupelec.edf.riseclipse.util.IRiseClipseConsole;
 import fr.centralesupelec.edf.riseclipse.util.IRiseClipseResourceSet;
 import fr.centralesupelec.edf.riseclipse.util.AbstractRiseClipseResourceSet;
-import fr.centralesupelec.edf.riseclipse.util.IRiseClipseResourceSetFactory;
 import fr.centralesupelec.edf.riseclipse.util.RiseClipseMetamodel;
-import fr.centralesupelec.edf.riseclipse.util.RiseClipseRuntimeException;
 
 /**
  * The base is the EMF generated editor
@@ -634,7 +622,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         super();
         
         this.console = new EclipseRiseClipseConsole();
-//        console.setLevel( IRiseClipseConsole.INFO_LEVEL );
+        console.setLevel( IRiseClipseConsole.INFO_LEVEL );
         
         RiseClipseMetamodel.loadKnownMetamodels( console );
         
@@ -668,7 +656,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
             RiseClipseMetamodel metamodel = RiseClipseMetamodel.getMetamodel( metamodelName.get() ).get();
             if( metamodel.getResourceSetFactory() != null ) {
                 // Not strict content for Editor
-                resourceSet = metamodel.getResourceSetFactory().map( f -> f.createResourceSet( false, console ));
+                resourceSet = metamodel.getResourceSetFactory().map( f -> f.createResourceSet( false ));
             }
             if( metamodel.getAdapterFactory() != null ) {
                 adapterFactory.addAdapterFactory( metamodel.getAdapterFactory().get() );
