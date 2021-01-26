@@ -15,5 +15,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.ide;visibility:=reexport,
  org.eclipse.ui.console,
  fr.centralesupelec.edf.riseclipse.main,
- org.eclipse.emf.ecore.xmi
+ org.eclipse.emf.ecore.xmi,
+ org.eclipse.core.commands,
+ org.eclipse.swt,
+ org.eclipse.jface
 Bundle-ActivationPolicy: lazy
