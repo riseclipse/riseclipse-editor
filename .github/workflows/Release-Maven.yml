@@ -1,0 +1,31 @@
+name: Release on OSSRH and Maven Central
+
+# This CD workflow releases packages to OSSRH Nexus repository and to Maven Central
+# It only runs on MASTER branch AFTER Build and Test Workflow is completed AND if commit is tagged (which is done when merging)
+# NOTE: Maven central needs aproval in Nexus OSSRH before being released
+
+on:
+  workflow_run:
+    workflows: [Build and test]
+    types:
+      - completed
+    branches: [master, main]
+
+jobs:
+  publish_release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && contains(github.ref, 'refs/tags/')
+
+    steps: 
+    - name: Checkout riseclipse-editor
+      uses: actions/checkout@v2
+      with:
+        path: riseclipse-editor
+        repository: RiseClipse/riseclipse-editor
+        ref: master
+
+    - name: release_ossrh_central
+      run: |
+        cd riseclipse-editor
+        cd fr.centralesupelec.edf.riseclipse.editor
+        mvn release:perform
