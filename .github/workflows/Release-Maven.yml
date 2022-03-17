@@ -25,5 +25,5 @@ jobs:
 
     - name: release_ossrh_central
       run: |
-        cd riseclipse-developer/fr.centralesupelec.edf.riseclipse.editor
+        cd riseclipse-editor/fr.centralesupelec.edf.riseclipse.editor
         mvn release:perform
