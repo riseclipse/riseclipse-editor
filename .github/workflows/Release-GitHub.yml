@@ -14,31 +14,21 @@ jobs:
   publish_release:
     needs: [build, test]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && contains(github.ref, 'refs/tags/')
 
     steps: 
-    # Get version and artifacts
     - name: Checkout riseclipse-editor
       uses: actions/checkout@v2
       with:
         path: riseclipse-editor
-        ref: ${{ github.ref_name }}
-
-    - name: Download artifact
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: Build-Test.yml
-        workflow_conclusion: success
-        path: ${{ github.workspace }}/artifacts
+        ref: master
 
     - name: Extract Maven project version
       run: |
-        cd riseclipse-editor
+        cd riseclipse-developer
         echo ::set-output name=project_version::$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
       id: get_version
         
-    # Create new branch and release
+    # Create new branch and release with artifacts
     - name: Create Release branch
       uses: peterjgrainger/action-create-branch@v2.0.1
       env:
@@ -57,11 +47,3 @@ jobs:
         body: This RiseClipse release contains the latest changes available. The ZIP file contains a CLI and UI version of the project. You can learn more by reading the documentation.
         draft: false
         prerelease: false
-
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ${{ github.workspace }}/artifacts
-        tag: ${{ steps.get_version.outputs.project_version }}
-        file_glob: true

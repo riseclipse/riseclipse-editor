@@ -14,18 +14,16 @@ on:
 jobs:
   publish_release:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && contains(github.ref, 'refs/tags/')
 
     steps: 
-    - name: Checkout riseclipse-editor
+    - name: Checkout riseclipse-developer
       uses: actions/checkout@v2
       with:
-        path: riseclipse-editor
-        repository: RiseClipse/riseclipse-editor
+        path: riseclipse-developer
+        repository: RiseClipse/riseclipse-developer
         ref: master
 
     - name: release_ossrh_central
       run: |
-        cd riseclipse-editor
-        cd fr.centralesupelec.edf.riseclipse.editor
+        cd riseclipse-developer/fr.centralesupelec.edf.riseclipse.developer.maven.validator.scl
         mvn release:perform

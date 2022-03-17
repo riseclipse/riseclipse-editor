@@ -4,7 +4,7 @@ name: Rollback Failure
 
 on:
   workflow_run:
-    workflows: [Build and test,  Release on GitHub, Release on OSSRH and Maven Central]
+    workflows: [Build and test, Release DockerHub, Release on GitHub IO site, Release on GitHub, Release on OSSRH and Maven Central]
     types:
       - completed
     branches: [master, main]
@@ -15,20 +15,19 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
 
     steps:
-      # Get artefacts and version
-      - name: Checkout riseclipse-editor
+    # Get artefacts and version
+      - name: Checkout riseclipse-developer
         uses: actions/checkout@v2
         with:
           path: riseclipse-developer
-          ref: ${{ github.ref_name }}
+          ref: master
 
       - name: Extract Maven project version
         run: |
-          cd riseclipse-editor
+          cd riseclipse-developer
           echo ::set-output name=project_version::$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
         id: get_version
 
-      # Delete release branch
       - name: delete branch if created
         uses: dawidd6/action-delete-branch@v3
         with:
