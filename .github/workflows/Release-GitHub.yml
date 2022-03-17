@@ -24,7 +24,7 @@ jobs:
 
     - name: Extract Maven project version
       run: |
-        cd riseclipse-developer
+        cd riseclipse-editor
         echo ::set-output name=project_version::$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
       id: get_version
         

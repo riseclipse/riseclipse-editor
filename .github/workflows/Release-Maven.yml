@@ -16,14 +16,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps: 
-    - name: Checkout riseclipse-developer
+    - name: Checkout riseclipse-editor
       uses: actions/checkout@v2
       with:
-        path: riseclipse-developer
-        repository: RiseClipse/riseclipse-developer
+        path: riseclipse-editor
+        repository: RiseClipse/riseclipse-editor
         ref: master
 
     - name: release_ossrh_central
       run: |
-        cd riseclipse-developer/fr.centralesupelec.edf.riseclipse.developer.maven.validator.scl
+        cd riseclipse-developer/fr.centralesupelec.edf.riseclipse.editor
         mvn release:perform
