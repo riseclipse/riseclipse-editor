@@ -6,7 +6,8 @@ name: Build and test
 on: 
   push: # Triggered every time on push
   pull_request: # Trigger on PR
-    types: [opened, reopened] 
+    types: [opened, reopened]
+  workflow_call: # Triggered manually for Release
 
 jobs:
   call-build-test-workflow:
