@@ -11,16 +11,29 @@ jobs:
     uses: riseclipse/riseclipse-workflows/.github/workflows/Build-Test.yml@master
     with:
       build-path: ${{ env.BUILD_PATH }}
+    secrets:
+      RISECLIPSE_PGP_KEY_PRIVATE:  ${{ secrets.RISECLIPSE_PGP_KEY_PRIVATE }}
+      RISECLIPSE_PGP_KEY_PASSWORD: ${{ secrets.RISECLIPSE_PGP_KEY_PASSWORD }}
+      RISECLIPSE_OSSRH_USERNAME:   ${{ secrets.RISECLIPSE_OSSRH_USERNAME }}
+      RISECLIPSE_OSSRH_PASSWORD:   ${{ secrets.RISECLIPSE_OSSRH_PASSWORD }}
+
   call-release-github-workflow:
     name: Release GH
     needs: [call-build-test-workflow]
     uses: riseclipse/riseclipse-workflows/.github/workflows/Release-GitHub.yml@master
+
   call-release-maven-workflow:
     name: Release MVN
     needs: [call-build-test-workflow]
     uses: riseclipse/riseclipse-workflows/.github/workflows/Release-Maven.yml@master
     with:
       build-path: ${{ env.BUILD_PATH }}
+    secrets:
+      RISECLIPSE_PGP_KEY_PRIVATE:  ${{ secrets.RISECLIPSE_PGP_KEY_PRIVATE }}
+      RISECLIPSE_PGP_KEY_PASSWORD: ${{ secrets.RISECLIPSE_PGP_KEY_PASSWORD }}
+      RISECLIPSE_OSSRH_USERNAME:   ${{ secrets.RISECLIPSE_OSSRH_USERNAME }}
+      RISECLIPSE_OSSRH_PASSWORD:   ${{ secrets.RISECLIPSE_OSSRH_PASSWORD }}
+      
   call-rollback-if-failure:
     name: Rollback if failed
     if: always() && (needs.build-test.result == 'failure' || needs.call-release-github-workflow.result == 'failure' || needs.call-release-maven-workflow.result == 'failure' || needs.release-github-io.result == 'failure'  || needs.release-dockerhub.result == 'failure')

@@ -15,3 +15,8 @@ jobs:
     uses: riseclipse/riseclipse-workflows/.github/workflows/Build-Test.yml@master
     with:
       build-path: fr.centralesupelec.edf.riseclipse.editor
+    secrets:
+      RISECLIPSE_PGP_KEY_PRIVATE:  ${{ secrets.RISECLIPSE_PGP_KEY_PRIVATE }}
+      RISECLIPSE_PGP_KEY_PASSWORD: ${{ secrets.RISECLIPSE_PGP_KEY_PASSWORD }}
+      RISECLIPSE_OSSRH_USERNAME:   ${{ secrets.RISECLIPSE_OSSRH_USERNAME }}
+      RISECLIPSE_OSSRH_PASSWORD:   ${{ secrets.RISECLIPSE_OSSRH_PASSWORD }}
