@@ -71,7 +71,6 @@ public class NavigateToMenuBuilder extends CompoundContributionItem implements I
         items[0] = navigateTo;
 
         EObject o = ( EObject ) tree.getFirstElement();
-        Optional< AdapterFactory > adapter = RiseClipseMetamodel.getMetamodel( o.eClass().getEPackage().getNsURI() ).flatMap( a -> a.getAdapterFactory() );
         EList< EReference > refs = o.eClass().getEAllReferences();
         ArrayList< EReference > usedRefs = new ArrayList< EReference >();
         ArrayList< Object > values = new ArrayList< Object >();
@@ -104,9 +103,13 @@ public class NavigateToMenuBuilder extends CompoundContributionItem implements I
                 else {
                     val = values.get( i );
                 }
-                if( adapter.isPresent() ) {
-                    IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.get().adapt( val, IItemLabelProvider.class );
-                    contributionParameters.label = labelProvider.getText( val );
+                contributionParameters.label = val.getClass().getSimpleName();
+                if( val instanceof EObject ) {
+                    Optional< AdapterFactory > adapter = RiseClipseMetamodel.getMetamodel((( EObject ) val ).eClass().getEPackage().getNsURI() ).flatMap( a -> a.getAdapterFactory() );
+                    if( adapter.isPresent() ) {
+                        IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.get().adapt( val, IItemLabelProvider.class );
+                        contributionParameters.label = labelProvider.getText( val );
+                    }
                 }
                 CommandContributionItem c = new CommandContributionItem( contributionParameters );
                 map.put( c, val );
