@@ -22,8 +22,11 @@ package fr.centralesupelec.edf.riseclipse.editor.handlers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.notify.AdapterFactory;
 import org.eclipse.emf.common.util.EList;
@@ -33,6 +36,7 @@ import org.eclipse.emf.edit.provider.IItemLabelProvider;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
@@ -71,7 +75,10 @@ public class NavigateToMenuBuilder extends CompoundContributionItem implements I
         items[0] = navigateTo;
 
         EObject o = ( EObject ) tree.getFirstElement();
-        Optional< AdapterFactory > adapter = RiseClipseMetamodel.getMetamodel( o.eClass().getEPackage().getNsURI() ).flatMap( a -> a.getAdapterFactory() );
+        // Optional< AdapterFactory > adapter = RiseClipseMetamodel.getMetamodel( o.eClass().getEPackage().getNsURI() ).flatMap( a -> a.getAdapterFactory() );
+        // In CGMES 3.0.0, there are two metamodels (cim and eu), and links between objects belonging to them
+        // Therefore, the adapter may be in the other metamodel. So we look in all of them
+        List< Optional< AdapterFactory >> adapters = RiseClipseMetamodel.getKnownsMetamodels().stream().map( m -> m.getAdapterFactory() ).collect( Collectors.toList() );
         EList< EReference > refs = o.eClass().getEAllReferences();
         ArrayList< EReference > usedRefs = new ArrayList< EReference >();
         ArrayList< Object > values = new ArrayList< Object >();
@@ -104,9 +111,14 @@ public class NavigateToMenuBuilder extends CompoundContributionItem implements I
                 else {
                     val = values.get( i );
                 }
-                if( adapter.isPresent() ) {
-                    IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.get().adapt( val, IItemLabelProvider.class );
-                    contributionParameters.label = labelProvider.getText( val );
+                for( Optional< AdapterFactory > adapter : adapters ) {
+                    if( adapter.isPresent() ) {
+                        IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.get().adapt( val, IItemLabelProvider.class );
+                        if( labelProvider != null ) {
+                            contributionParameters.label = labelProvider.getText( val );
+                            break;
+                        }
+                    }
                 }
                 CommandContributionItem c = new CommandContributionItem( contributionParameters );
                 map.put( c, val );
