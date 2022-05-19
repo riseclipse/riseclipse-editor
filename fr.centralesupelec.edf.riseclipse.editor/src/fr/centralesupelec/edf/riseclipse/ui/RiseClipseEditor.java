@@ -628,7 +628,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         super();
         
         this.console = new EclipseRiseClipseConsole();
-        console.setLevel( Severity.WARNING );
+        console.setLevel( Severity.INFO );
         
         RiseClipseMetamodel.loadKnownMetamodels( console );
         
