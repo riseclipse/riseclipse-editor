@@ -22,8 +22,10 @@ package fr.centralesupelec.edf.riseclipse.editor.handlers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.notify.AdapterFactory;
 import org.eclipse.emf.common.util.EList;
@@ -105,10 +107,21 @@ public class NavigateToMenuBuilder extends CompoundContributionItem implements I
                 }
                 contributionParameters.label = val.getClass().getSimpleName();
                 if( val instanceof EObject ) {
-                    Optional< AdapterFactory > adapter = RiseClipseMetamodel.getMetamodel((( EObject ) val ).eClass().getEPackage().getNsURI() ).flatMap( a -> a.getAdapterFactory() );
-                    if( adapter.isPresent() ) {
-                        IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.get().adapt( val, IItemLabelProvider.class );
-                        contributionParameters.label = labelProvider.getText( val );
+                    // Optional< AdapterFactory > adapter = RiseClipseMetamodel.getMetamodel( o.eClass().getEPackage().getNsURI() ).flatMap( a -> a.getAdapterFactory() );
+                    // In CGMES 3.0.0, there are two metamodels (cim and eu), and links between objects belonging to them
+                    // Therefore, the adapter may be in the other metamodel. So we look in all of them
+                    List< Optional< AdapterFactory >> adapters = RiseClipseMetamodel.getKnownsMetamodels().stream().map( m -> m.getAdapterFactory() ).collect( Collectors.toList() );
+                    contributionParameters.label = val.getClass().getSimpleName();
+                    if( val instanceof EObject ) {
+                        for( Optional< AdapterFactory > adapter : adapters ) {
+                            if( adapter.isPresent() ) {
+                                IItemLabelProvider labelProvider = ( IItemLabelProvider ) adapter.get().adapt( val, IItemLabelProvider.class );
+                                if( labelProvider != null ) {
+                                    contributionParameters.label = labelProvider.getText( val );
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
                 CommandContributionItem c = new CommandContributionItem( contributionParameters );
