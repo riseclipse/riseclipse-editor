@@ -956,7 +956,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 // Load the resource through the editing domain.
                 //
                 @SuppressWarnings("unused")
-				Resource resource = editingDomain.getResourceSet().getResource( resourceURI, true );
+                Resource resource = editingDomain.getResourceSet().getResource( resourceURI, true );
             }
             // This is done by AbstractRiseClipseModelLoader in the command line tool 
             catch( RuntimeException re ) {
@@ -967,8 +967,11 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                             "value ", e.getValue(), " is not legal for feature ",
                             e.getFeature().getName(), ", it should be ", e.getFeature().getEType().getInstanceTypeName() );
                 }
-                else {
+                else if( cause != null ) {
                     console.error( EDITOR_CATEGORY, 0, "Problem loading ", resourceURI, " : ", cause );
+                }
+                else {
+                    console.error( EDITOR_CATEGORY, 0, "Problem loading ", resourceURI, " : ", re );
                 }
             }
             catch( Exception e ) {
