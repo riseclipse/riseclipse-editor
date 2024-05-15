@@ -932,8 +932,10 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
                 String zipURI = resourceURIs.get( 0 ).toString();
                 resourceURIs.clear();
                 while( entry != null ) {
-                    // Must use "archive:" and not "zip:" to be recognized by ArchiveURIHandlerImpl
-                    resourceURIs.add( URI.createURI( "archive:" + zipURI + "!/" + entry.getName() ));
+                    if( ! entry.isDirectory() ) {
+                        // Must use "archive:" and not "zip:" to be recognized by ArchiveURIHandlerImpl
+                        resourceURIs.add( URI.createURI( "archive:" + zipURI + "!/" + entry.getName() ));
+                    }
                     entry = in.getNextEntry();
                 }
             }
