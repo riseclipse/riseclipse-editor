@@ -7,7 +7,7 @@ Bundle-ClassPath: .
 Bundle-Activator: fr.centralesupelec.edf.riseclipse.ui.RiseClipseEditorPlugin$Implementation
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: fr.centralesupelec.edf.riseclipse.ui
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources;visibility:=reexport,
