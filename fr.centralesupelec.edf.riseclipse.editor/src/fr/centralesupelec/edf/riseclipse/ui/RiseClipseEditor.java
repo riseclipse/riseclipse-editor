@@ -1,6 +1,6 @@
 /*
 *************************************************************************
-**  Copyright (c) 2019 CentraleSupélec & EDF.
+**  Copyright (c) 2016-2025 CentraleSupélec & EDF.
 **  All rights reserved. This program and the accompanying materials
 **  are made available under the terms of the Eclipse Public License v2.0
 **  which accompanies this distribution, and is available at
@@ -15,7 +15,7 @@
 **      dominique.marcadet@centralesupelec.fr
 **      aurelie.dehouck-neveu@edf.fr
 **  Web site:
-**      http://wdi.supelec.fr/software/RiseClipse/
+**      https://riseclipse.github.io
 *************************************************************************
 */
 package fr.centralesupelec.edf.riseclipse.ui;
@@ -99,6 +99,7 @@ import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheet;
 import org.eclipse.ui.views.properties.PropertySheetPage;
+
 import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.command.CommandStack;
@@ -152,6 +153,8 @@ import fr.centralesupelec.edf.riseclipse.util.Severity;
  */
 public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDomainProvider, ISelectionProvider,
         IMenuListener, IViewerProvider, IGotoMarker {
+
+    private static final String RISECLIPSE_CONSOLE_NAME = "RiseClipseConsole";
 
     private static final String EDITOR_CATEGORY = "RiseClipse/Editor";
 
@@ -627,7 +630,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
     public RiseClipseEditor() {
         super();
         
-        this.console = new EclipseRiseClipseConsole();
+        this.console = EclipseRiseClipseConsole.useConsole( RISECLIPSE_CONSOLE_NAME );
         console.setLevel( Severity.INFO );
         
         RiseClipseMetamodel.loadKnownMetamodels( console );
@@ -923,7 +926,9 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         URIConverter uriConverter = new ExtensibleURIConverterImpl();
 
         ArrayList< URI > resourceURIs = new ArrayList< URI >();
-        resourceURIs.add( EditUIUtil.getURI( getEditorInput() ));
+        URI uri = EditUIUtil.getURI( getEditorInput() );
+        this.console = EclipseRiseClipseConsole.useConsole( uri.lastSegment() );
+        resourceURIs.add( uri );
         
         try {
             ZipInputStream in = new ZipInputStream( uriConverter.createInputStream( resourceURIs.get( 0 )));
@@ -1023,6 +1028,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         }
     }
 
+    
     /**
      * This is the method used by the framework to install your own controls.
      */
@@ -1590,6 +1596,22 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
      */
     @Override
     public void dispose() {
+        // Remove console (see editingDomain)
+        EclipseRiseClipseConsole.disposeConsole( getPartName() );
+        this.console = EclipseRiseClipseConsole.useConsole( RISECLIPSE_CONSOLE_NAME );
+        
+        // Loaded resource still referenced by editing domain and other attributes
+        // 31 January 2025: fail to find the root cause of this!
+        // For example, ValidateAction keeps a link on the resource even if the corresponding window is closed
+        // And we may need to change EMF to, give a solution to this.
+        // So we will live with these memory leaks. 
+        editingDomain = null;
+        selectionViewer = null;
+        currentViewer = null;
+        currentViewerPane = null;
+        contentOutlineViewer = null;
+        editorSelection = StructuredSelection.EMPTY;
+        
         updateProblemIndication = false;
 
         ResourcesPlugin.getWorkspace().removeResourceChangeListener( resourceChangeListener );
