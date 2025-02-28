@@ -1344,6 +1344,7 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
      */
     @Override
     public boolean isDirty() {
+        if( editingDomain == null ) return false;
         return ( ( BasicCommandStack ) editingDomain.getCommandStack() ).isSaveNeeded();
     }
 
