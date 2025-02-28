@@ -55,6 +55,7 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -631,7 +632,23 @@ public class RiseClipseEditor extends MultiPageEditorPart implements IEditingDom
         super();
         
         this.console = EclipseRiseClipseConsole.useConsole( RISECLIPSE_CONSOLE_NAME );
-        console.setLevel( Severity.INFO );
+        IPreferenceStore store = RiseClipseEditorPlugin.getPlugin().getPreferenceStore();
+        int choice = store.getInt( IRiseClipseEditorConstants.PRE_SEVERITY_CHOICE );
+        if( choice == 0 ) choice = 2;
+        switch( choice ) {
+        case 1:
+            console.setLevel( Severity.INFO );
+            break;
+        case 2:
+            console.setLevel( Severity.NOTICE );
+            break;
+        case 3:
+            console.setLevel( Severity.WARNING );
+            break;
+        case 4:
+            console.setLevel( Severity.ERROR );
+            break;
+        }
         
         RiseClipseMetamodel.loadKnownMetamodels( console );
         
