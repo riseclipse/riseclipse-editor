@@ -26,7 +26,7 @@
  
   <groupId>io.github.riseclipse</groupId>
   <artifactId>riseclipse-editor</artifactId>
-  <version>1.2.2</version>
+  <version>1.2.3-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>[aggregator] RiseClipse Editor</name>
   
@@ -39,7 +39,7 @@
   <scm>
     <connection>scm:git:git@github.com:riseclipse/riseclipse-editor.git</connection>
     <developerConnection>scm:git:git@github.com:riseclipse/riseclipse-editor.git</developerConnection>
-    <tag>riseclipse-editor-1.2.2</tag>
+    <tag>HEAD</tag>
   </scm>
  
 
