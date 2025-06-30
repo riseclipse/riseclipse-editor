@@ -10,8 +10,7 @@ Bundle-Vendor: %providerName
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: fr.centralesupelec.edf.riseclipse.ui
-Require-Bundle: fr.centralesupelec.edf.riseclipse.main,
- org.eclipse.core.runtime,
+Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources;visibility:=reexport,
  org.eclipse.emf.edit.ui;visibility:=reexport,
  org.eclipse.ui.ide;visibility:=reexport,
@@ -20,5 +19,6 @@ Require-Bundle: fr.centralesupelec.edf.riseclipse.main,
  org.eclipse.core.commands,
  org.eclipse.swt,
  org.eclipse.jface,
- org.eclipse.ui
+ org.eclipse.ui,
+ fr.centralesupelec.edf.riseclipse.main;bundle-version="1.2.13"
 Bundle-ActivationPolicy: lazy
