@@ -1,16 +1,16 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
+Automatic-Module-Name: fr.centralesupelec.edf.riseclipse.editor
 Bundle-Name: %pluginName
 Bundle-SymbolicName: fr.centralesupelec.edf.riseclipse.editor;singleton:=true
-Bundle-Version: 1.2.0
+Bundle-Version: 1.2.1.qualifier
 Bundle-ClassPath: .
 Bundle-Activator: fr.centralesupelec.edf.riseclipse.ui.RiseClipseEditorPlugin$Implementation
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: fr.centralesupelec.edf.riseclipse.ui
-Require-Bundle: fr.centralesupelec.edf.riseclipse.main,
- org.eclipse.core.runtime,
+Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources;visibility:=reexport,
  org.eclipse.emf.edit.ui;visibility:=reexport,
  org.eclipse.ui.ide;visibility:=reexport,
@@ -18,5 +18,7 @@ Require-Bundle: fr.centralesupelec.edf.riseclipse.main,
  org.eclipse.emf.ecore.xmi,
  org.eclipse.core.commands,
  org.eclipse.swt,
- org.eclipse.jface
+ org.eclipse.jface,
+ org.eclipse.ui,
+ fr.centralesupelec.edf.riseclipse.main;bundle-version="1.2.12"
 Bundle-ActivationPolicy: lazy

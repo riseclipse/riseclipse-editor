@@ -1,5 +1,5 @@
 # *************************************************************************
-# **  Copyright (c) 2024 CentraleSupélec & EDF.
+# **  Copyright (c) 2025 CentraleSupélec & EDF.
 # **  All rights reserved. This program and the accompanying materials
 # **  are made available under the terms of the Eclipse Public License v2.0
 # **  which accompanies this distribution, and is available at
@@ -17,18 +17,20 @@
 # **      https://riseclipse.github.io
 # *************************************************************************
 
-name: Build
+name: Release snapshots on Maven Central
 
-# This workflow is triggered on every push to verify that the project builds correctly and runs Sonar + Unit tests
-
-on: 
-  pull_request:
+on:
+  push:
     branches:
-      - master
+      - 'develop'
 
 jobs:
-  call-verify-workflow:
-    name: Verify Project
-    uses: riseclipse/riseclipse-developer/.github/workflows/Shared-Verify-Components.yml@master
+  call-release-snapshot-on-maven-central-workflow:
+    name: Release snapshots on Maven Central
+    uses: riseclipse/riseclipse-developer/.github/workflows/Shared-Deploy-Snapshot-Components.yml@develop
+    with:
+      run_sonarqube: true
     secrets:
-       SONAR_TOKEN: ${{ secrets.RISECLIPSE_SONAR_TOKEN }}
+      RISECLIPSE_CENTRAL_USERNAME:   ${{ secrets.RISECLIPSE_CENTRAL_USERNAME }}
+      RISECLIPSE_CENTRAL_PASSWORD:   ${{ secrets.RISECLIPSE_CENTRAL_PASSWORD }}
+      SONAR_TOKEN: ${{ secrets.RISECLIPSE_SONAR_TOKEN }}

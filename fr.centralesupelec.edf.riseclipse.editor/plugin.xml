@@ -112,5 +112,19 @@
          </command>
       </menuContribution>
    </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="fr.centralesupelec.edf.riseclipse.editor.preferences.RiseClipsePreferencePage"
+            id="fr.centralesupelec.edf.riseclipse.editor.preferences.RiseClipsePreferencePage"
+            name="RiseClipse">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="fr.centralesupelec.edf.riseclipse.editor.preferences.RiseClipsePreferenceInitializer">
+      </initializer>
+   </extension>
 
 </plugin>
