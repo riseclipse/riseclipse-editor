@@ -20,5 +20,5 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.swt,
  org.eclipse.jface,
  org.eclipse.ui,
- fr.centralesupelec.edf.riseclipse.main;bundle-version="1.2.13"
+ fr.centralesupelec.edf.riseclipse.main;bundle-version="1.2.12"
 Bundle-ActivationPolicy: lazy
