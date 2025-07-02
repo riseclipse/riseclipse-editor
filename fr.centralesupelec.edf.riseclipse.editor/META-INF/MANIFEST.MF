@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Automatic-Module-Name: fr.centralesupelec.edf.riseclipse.editor
 Bundle-Name: %pluginName
 Bundle-SymbolicName: fr.centralesupelec.edf.riseclipse.editor;singleton:=true
-Bundle-Version: 1.2.2
+Bundle-Version: 1.2.3.qualifier
 Bundle-ClassPath: .
 Bundle-Activator: fr.centralesupelec.edf.riseclipse.ui.RiseClipseEditorPlugin$Implementation
 Bundle-Vendor: %providerName
@@ -20,5 +20,5 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.swt,
  org.eclipse.jface,
  org.eclipse.ui,
- fr.centralesupelec.edf.riseclipse.main;bundle-version="1.2.12"
+ fr.centralesupelec.edf.riseclipse.main;bundle-version="1.2.13"
 Bundle-ActivationPolicy: lazy
